@@ -1,0 +1,163 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #242424;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Dark mode styles */
+.dark {
+  color-scheme: dark;
+}
+
+.dark input[type="range"] {
+  background-color: #4B5563;
+}
+
+.dark input[type="range"]::-webkit-slider-thumb {
+  background-color: #6366F1;
+}
+
+.dark input[type="range"]::-moz-range-thumb {
+  background-color: #6366F1;
+}
+
+/* Light mode styles */
+@media (prefers-color-scheme: light) {
+  :root {
+    color: #213547;
+    background-color: #ffffff;
+  }
+}
+
+/* Common styles */
+input[type="range"] {
+  @apply h-2 w-full cursor-pointer appearance-none rounded-lg bg-gray-200;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  @apply h-4 w-4 appearance-none rounded-full bg-indigo-600;
+  -webkit-appearance: none;
+}
+
+input[type="range"]::-moz-range-thumb {
+  @apply h-4 w-4 rounded-full bg-indigo-600 border-0;
+}
+
+.transition-all {
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+a {
+  font-weight: 500;
+  color: #646cff;
+  text-decoration: inherit;
+}
+a:hover {
+  color: #535bf2;
+}
+
+body {
+  margin: 0;
+  display: flex;
+  place-items: center;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+h1 {
+  font-size: 3.2em;
+  line-height: 1.1;
+}
+
+button {
+  border-radius: 8px;
+  border: 1px solid transparent;
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: #1a1a1a;
+  cursor: pointer;
+  transition: border-color 0.25s;
+}
+button:hover {
+  border-color: #646cff;
+}
+button:focus,
+button:focus-visible {
+  outline: 4px auto -webkit-focus-ring-color;
+}
+
+/* Toggle Switch Styles */
+.toggle-switch {
+  @apply relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none;
+}
+
+.toggle-switch[data-headlessui-state="checked"] {
+  @apply bg-green-500;
+}
+
+.toggle-switch[data-headlessui-state="unchecked"] {
+  @apply bg-gray-200 dark:bg-gray-600;
+}
+
+.toggle-switch:focus-visible {
+  @apply ring-2 ring-offset-2 ring-offset-white dark:ring-offset-gray-900 ring-green-500;
+}
+
+.toggle-handle {
+  @apply pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out;
+}
+
+.toggle-handle[data-enabled="true"] {
+  @apply translate-x-5 shadow-[0_2px_4px_rgba(0,0,0,0.2)];
+}
+
+.toggle-handle[data-enabled="false"] {
+  @apply translate-x-0 shadow-[0_1px_2px_rgba(0,0,0,0.1)];
+}
+
+/* Dark mode enhancements */
+.dark .toggle-switch[data-headlessui-state="checked"] {
+  @apply bg-green-600;
+}
+
+.dark .toggle-handle {
+  @apply shadow-[0_1px_3px_rgba(0,0,0,0.3)];
+}
+
+/* Hover effects */
+.toggle-switch:hover .toggle-handle {
+  @apply shadow-lg;
+}
+
+/* Focus styles */
+.toggle-switch:focus-visible {
+  @apply ring-2 ring-offset-2 ring-green-500;
+}
+
+/* Animation enhancements */
+.toggle-handle {
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Improved touch target size */
+.toggle-container {
+  @apply p-1;
+  touch-action: manipulation;
+}
