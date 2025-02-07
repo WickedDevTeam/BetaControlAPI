@@ -35,37 +35,19 @@ mkdir -p models/nudenet
 mkdir -p frontend/dist
 mkdir -p ~/.local/lib/python3.10/site-packages
 
-# Copy model files from the repository
-log_info "Setting up model files..."
-if [ -d "models_repo" ]; then
-    # Copy NudeNet models
-    cp -f models_repo/nudenet/classifier_model.onnx models/nudenet/
-    cp -f models_repo/nudenet/detector_v2_default_checkpoint.onnx models/nudenet/
-    # Copy dlib model
-    cp -f models_repo/dlib/shape_predictor_68_face_landmarks.dat ./
-    # Copy OpenPose models if they exist
-    if [ -d "models_repo/openpose" ]; then
-        mkdir -p models/pose/coco
-        mkdir -p models/face
-        mkdir -p models/hand
-        cp -f models_repo/openpose/pose/coco/pose_iter_440000.caffemodel models/pose/coco/
-        cp -f models_repo/openpose/face/pose_iter_116000.caffemodel models/face/
-        cp -f models_repo/openpose/hand/pose_iter_102000.caffemodel models/hand/
-    fi
-    log_success "Model files copied successfully"
-else
-    log_warning "models_repo directory not found, will need to download models"
-    # Download and setup models
-    log_info "Setting up models..."
-    python backend/install_models.py
+# Download and extract model files
+log_info "Downloading model files..."
+curl -L "https://github.com/WickedDevTeam/BetaControlAPI/releases/download/v1.0.0/models.zip" -o models.zip
+unzip -o models.zip -d models_repo/
 
-    # Download required model files if not exists
-    if [ ! -f "shape_predictor_68_face_landmarks.dat" ]; then
-        log_info "Downloading facial landmarks predictor..."
-        curl -L "http://dlib.net/files/shape_predictor_68_face_landmarks.dat.bz2" -o shape_predictor_68_face_landmarks.dat.bz2
-        bzip2 -d shape_predictor_68_face_landmarks.dat.bz2
-    fi
-fi
+# Copy model files to their locations
+log_info "Setting up model files..."
+cp -f models_repo/nudenet/classifier_model.onnx models/nudenet/
+cp -f models_repo/nudenet/detector_v2_default_checkpoint.onnx models/nudenet/
+cp -f models_repo/dlib/shape_predictor_68_face_landmarks.dat ./
+
+# Clean up
+rm -rf models.zip models_repo/
 
 # Install NudeNet in user's home directory
 log_info "Installing NudeNet..."
