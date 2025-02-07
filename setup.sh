@@ -1,57 +1,87 @@
 #!/bin/bash
 
-echo "🚀 Setting up BetaControlAPI..."
+# Set up colors for better visibility
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Function to print colored status messages
+log_info() {
+    echo -e "${BLUE}[INFO]${NC} $1"
+}
+
+log_success() {
+    echo -e "${GREEN}[SUCCESS]${NC} $1"
+}
+
+log_warning() {
+    echo -e "${YELLOW}[WARNING]${NC} $1"
+}
+
+log_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
+
+log_info "Setting up BetaControlAPI..."
 
 # Create necessary directories
-echo "📁 Creating required directories..."
+log_info "Creating required directories..."
 mkdir -p logs
 mkdir -p uploads
 mkdir -p cache
 mkdir -p models
+mkdir -p frontend/dist
 
 # Install Python dependencies
 echo "📦 Installing Python dependencies..."
 pip install --no-cache-dir -r requirements.txt
 
-# Download required model files
-echo "🔄 Downloading required model files..."
+# Download required model files if not exists
 if [ ! -f "shape_predictor_68_face_landmarks.dat" ]; then
-    echo "⬇️ Downloading facial landmarks predictor..."
+    log_info "Downloading facial landmarks predictor..."
     curl -L "http://dlib.net/files/shape_predictor_68_face_landmarks.dat.bz2" -o shape_predictor_68_face_landmarks.dat.bz2
     bzip2 -d shape_predictor_68_face_landmarks.dat.bz2
 fi
 
 # Install Node.js dependencies and build frontend
-echo "🏗️ Setting up frontend..."
+log_info "Setting up frontend..."
 cd frontend
-if ! command -v npm &> /dev/null; then
-    echo "⚠️ npm not found. Installing Node.js..."
-    if [ "$(uname)" == "Darwin" ]; then
-        # macOS
-        brew install node
-    elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
-        # Linux
-        curl -fsSL https://deb.nodesource.com/setup_16.x | sudo -E bash -
-        sudo apt-get install -y nodejs
-    fi
+
+# Install frontend dependencies if not already installed
+if [ ! -d "node_modules" ]; then
+    log_info "Installing frontend dependencies..."
+    npm install
 fi
 
-echo "📦 Installing frontend dependencies..."
-npm install
-
-echo "🏗️ Building frontend for production..."
+# Build frontend for production
+log_info "Building frontend for production..."
 npm run build
-
 cd ..
 
 # Set up environment variables if not exists
 if [ ! -f ".env" ]; then
-    echo "📝 Creating .env file..."
-    cp .env.example .env
+    log_info "Creating default .env file..."
+    cat > .env << EOL
+FLASK_ENV=development
+DEBUG=True
+PRODUCTION=False
+PORT=3000
+HOST=0.0.0.0
+MAX_CONTENT_LENGTH=16777216
+CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+MAX_CONCURRENT_USERS=10
+RATE_LIMIT=100
+ENABLE_CACHING=True
+CACHE_TIMEOUT=3600
+COMPRESSION_QUALITY=85
+MAX_IMAGE_DIMENSION=4096
+EOL
 fi
 
 # Make start script executable
 chmod +x start.sh
 
-echo "✅ Setup completed successfully!"
-echo "🚀 Run './start.sh' to start the application" 
+log_success "Setup completed successfully!"
+log_info "Run './start.sh' to start the application" 
