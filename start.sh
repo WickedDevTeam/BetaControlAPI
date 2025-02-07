@@ -35,7 +35,7 @@ start_backend() {
     echo "🚀 Starting backend server..."
     if [ "$PRODUCTION" = "true" ]; then
         # Production mode with gunicorn
-        gunicorn --bind 0.0.0.0:${PORT:-3000} \
+        python -m gunicorn --bind 0.0.0.0:${PORT:-3000} \
                  --workers 4 \
                  --threads 2 \
                  --timeout 120 \
@@ -46,7 +46,7 @@ start_backend() {
                  "backend.app:app" &
     else
         # Development mode
-        python3 backend/app.py &
+        python backend/app.py &
     fi
     BACKEND_PID=$!
     echo "📝 Backend PID: $BACKEND_PID"
@@ -68,13 +68,40 @@ start_frontend() {
     echo "📝 Frontend PID: $FRONTEND_PID"
 }
 
+# Create required directories
+mkdir -p logs
+mkdir -p uploads
+mkdir -p cache
+mkdir -p models
+
+# Install dependencies if not already installed
+if [ ! -d "frontend/node_modules" ]; then
+    echo "📦 Installing frontend dependencies..."
+    cd frontend
+    npm install
+    cd ..
+fi
+
+if [ ! -f "requirements.txt" ]; then
+    echo "📦 Creating requirements.txt..."
+    echo "flask
+flask-cors
+pillow
+opencv-python
+numpy
+dlib
+psutil
+python-dotenv
+gunicorn" > requirements.txt
+fi
+
+echo "📦 Installing Python dependencies..."
+pip install -r requirements.txt
+
 # Load environment variables
 if [ -f .env ]; then
     export $(cat .env | grep -v '^#' | xargs)
 fi
-
-# Create logs directory if it doesn't exist
-mkdir -p logs
 
 # Check if services are already running
 if check_process "backend/app.py" || check_process "gunicorn"; then

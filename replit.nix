@@ -1,16 +1,23 @@
 { pkgs }: {
   deps = [
-    pkgs.python39
-    pkgs.python39Packages.pip
-    pkgs.python39Packages.flask
-    pkgs.python39Packages.opencv4
-    pkgs.python39Packages.numpy
-    pkgs.python39Packages.pillow
-    pkgs.python39Packages.dlib
-    pkgs.python39Packages.requests
-    pkgs.python39Packages.flask-cors
-    pkgs.python39Packages.psutil
+    pkgs.python3
+    pkgs.python3Packages.pip
+    pkgs.python3Packages.flask
+    pkgs.python3Packages.opencv4
+    pkgs.python3Packages.numpy
+    pkgs.python3Packages.pillow
+    pkgs.python3Packages.dlib
+    pkgs.python3Packages.requests
+    pkgs.python3Packages.flask-cors
+    pkgs.python3Packages.psutil
+    pkgs.python3Packages.python-dotenv
+    pkgs.python3Packages.gunicorn
+    pkgs.nodejs_20
+    pkgs.nodePackages.npm
+    pkgs.bashInteractive
     pkgs.cmake
     pkgs.gcc
+    pkgs.gnumake
+    pkgs.git
   ];
 } 

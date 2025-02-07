@@ -1,5 +1,5 @@
-run = "python3 backend/app.py"
-language = "python3"
+run = "bash start.sh"
+language = "python"
 entrypoint = "backend/app.py"
 hidden = [".config", "**/__pycache__", "**/.pytest_cache"]
 
@@ -7,8 +7,19 @@ hidden = [".config", "**/__pycache__", "**/.pytest_cache"]
 channel = "stable-23_05"
 
 [deployment]
-run = ["sh", "-c", "python3 backend/app.py"]
+run = ["sh", "-c", "./start.sh"]
 deploymentTarget = "cloudrun"
 
 [env]
-PYTHONPATH = "${PYTHONPATH}:${REPL_HOME}" 
+PYTHONPATH = "${PYTHONPATH}:${REPL_HOME}"
+PATH = "${PATH}:/home/runner/${REPL_SLUG}/.config/npm/node_global/bin:/home/runner/${REPL_SLUG}/node_modules/.bin"
+PYTHON = "python"
+FLASK_ENV = "development"
+FLASK_APP = "backend/app.py"
+
+[packager]
+language = "python3"
+  [packager.features]
+  enabledForHosting = true
+  packageSearch = true
+  guessImports = true 
