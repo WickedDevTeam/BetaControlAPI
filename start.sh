@@ -24,176 +24,97 @@ log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
-# Function to stop servers on script termination
-cleanup() {
-    log_info "Stopping servers..."
-    pkill -f "python backend/app.py" || true
-    pkill -f "npm run dev" || true
-    exit
-}
-
-# Function to check if a port is in use
-is_port_in_use() {
-    lsof -i :$1 >/dev/null 2>&1
+# Function to check if a process is running
+check_process() {
+    pgrep -f "$1" >/dev/null
     return $?
 }
 
-# Function to wait for a service to be ready
-wait_for_service() {
-    local url=$1
-    local service_name=$2
-    local max_attempts=$3
-    local attempt=1
-
-    log_info "Waiting for $service_name to be ready..."
-    while [ $attempt -le $max_attempts ]; do
-        if curl -s "$url" >/dev/null 2>&1; then
-            log_success "$service_name is ready!"
-            return 0
-        fi
-        
-        # Check if the process is still running
-        if ! pgrep -f "$4" >/dev/null; then
-            log_error "$service_name process has died"
-            return 1
-        fi
-        
-        log_info "Attempt $attempt/$max_attempts: $service_name not ready yet, waiting..."
-        sleep 1
-        ((attempt++))
-    done
-    
-    log_error "$service_name failed to start after $max_attempts attempts"
-    return 1
-}
-
-# Function to check and install Python requirements
-check_python_requirements() {
-    log_info "Checking Python requirements..."
-    
-    # Check if pip is installed
-    if ! command -v pip &> /dev/null; then
-        log_error "pip is not installed"
-        return 1
-    fi
-    
-    # Install requirements globally without using venv
-    log_info "Installing Python requirements globally..."
-    pip install -r requirements.txt --user
-    if [ $? -ne 0 ]; then
-        log_error "Failed to install Python requirements"
-        return 1
-    fi
-    log_success "Python requirements installed successfully"
-    
-    # Run setup script to ensure models are downloaded
-    log_info "Running setup script..."
-    python backend/setup.py
-    if [ $? -ne 0 ]; then
-        log_error "Setup script failed"
-        return 1
-    fi
-    
-    return 0
-}
-
-# Function to check and install Node.js requirements
-check_node_requirements() {
-    log_info "Checking Node.js requirements..."
-    
-    # Check if we're in the frontend directory
-    if [ ! -d "frontend" ]; then
-        log_error "frontend directory not found"
-        return 1
-    fi
-    
-    cd frontend
-    
-    # Check if node_modules exists
-    if [ ! -d "node_modules" ]; then
-        log_info "Installing Node.js dependencies..."
-        npm install
-        if [ $? -ne 0 ]; then
-            log_error "Failed to install Node.js dependencies"
-            cd ..
-            return 1
-        fi
-        log_success "Node.js dependencies installed successfully"
+# Function to start the backend
+start_backend() {
+    echo "🚀 Starting backend server..."
+    if [ "$PRODUCTION" = "true" ]; then
+        # Production mode with gunicorn
+        gunicorn --bind 0.0.0.0:${PORT:-3000} \
+                 --workers 4 \
+                 --threads 2 \
+                 --timeout 120 \
+                 --access-logfile logs/access.log \
+                 --error-logfile logs/error.log \
+                 --capture-output \
+                 --enable-stdio-inheritance \
+                 "backend.app:app" &
     else
-        log_success "Node.js dependencies already installed"
+        # Development mode
+        python3 backend/app.py &
     fi
-    
-    cd ..
-    return 0
+    BACKEND_PID=$!
+    echo "📝 Backend PID: $BACKEND_PID"
 }
 
-# Set up cleanup on script termination
-trap cleanup EXIT INT TERM
+# Function to start the frontend
+start_frontend() {
+    echo "🌐 Starting frontend server..."
+    cd frontend
+    if [ "$PRODUCTION" = "true" ]; then
+        # Production mode with serve
+        npx serve -s dist -l ${FRONTEND_PORT:-5173} &
+    else
+        # Development mode
+        npm run dev &
+    fi
+    FRONTEND_PID=$!
+    cd ..
+    echo "📝 Frontend PID: $FRONTEND_PID"
+}
 
-# Check if ports are already in use
-if is_port_in_use 8000; then
-    log_warning "Port 8000 is already in use. Stopping existing process..."
-    pkill -f "python backend/app.py" || true
-    sleep 2
+# Load environment variables
+if [ -f .env ]; then
+    export $(cat .env | grep -v '^#' | xargs)
 fi
 
-if is_port_in_use 5173; then
-    log_warning "Port 5173 is already in use. Stopping existing process..."
-    pkill -f "npm run dev" || true
-    sleep 2
+# Create logs directory if it doesn't exist
+mkdir -p logs
+
+# Check if services are already running
+if check_process "backend/app.py" || check_process "gunicorn"; then
+    echo "⚠️ Backend is already running"
+else
+    start_backend
 fi
 
-# Check if Python and npm are available
-if ! command -v python &> /dev/null; then
-    log_error "Python is not installed"
-    exit 1
+if check_process "npm run dev" || check_process "serve -s dist"; then
+    echo "⚠️ Frontend is already running"
+else
+    start_frontend
 fi
 
-if ! command -v npm &> /dev/null; then
-    log_error "npm is not installed"
-    exit 1
-fi
+# Function to cleanup processes on exit
+cleanup() {
+    echo "🛑 Stopping services..."
+    kill $BACKEND_PID 2>/dev/null
+    kill $FRONTEND_PID 2>/dev/null
+    exit 0
+}
 
-# Check and install requirements
-check_python_requirements
-if [ $? -ne 0 ]; then
-    log_error "Failed to set up Python requirements"
-    exit 1
-fi
+# Register cleanup function
+trap cleanup SIGINT SIGTERM
 
-check_node_requirements
-if [ $? -ne 0 ]; then
-    log_error "Failed to set up Node.js requirements"
-    exit 1
-fi
+echo "✅ Services started successfully!"
+echo "📊 Backend running on http://localhost:${PORT:-3000}"
+echo "🌐 Frontend running on http://localhost:${FRONTEND_PORT:-5173}"
+echo "📚 API documentation available at http://localhost:${PORT:-3000}/docs"
+echo "💡 Press Ctrl+C to stop all services"
 
-# Start backend server
-log_info "Starting backend server..."
-cd "$(dirname "$0")"  # Ensure we're in the right directory
-python backend/app.py &
-backend_pid=$!
-
-# Wait for backend to be ready
-if ! wait_for_service "http://127.0.0.1:8000" "Backend server" 30 "python backend/app.py"; then
-    log_error "Failed to start backend server"
-    exit 1
-fi
-
-# Start frontend server
-log_info "Starting frontend server..."
-cd frontend && npm run dev &
-frontend_pid=$!
-
-# Wait for frontend to be ready
-if ! wait_for_service "http://localhost:5173" "Frontend server" 30 "npm run dev"; then
-    log_error "Failed to start frontend server"
-    exit 1
-fi
-
-log_success "Both servers are running!"
-log_info "Frontend: http://localhost:5173"
-log_info "Backend: http://127.0.0.1:8000"
-log_info "Press Ctrl+C to stop both servers"
-
-# Wait for both processes
-wait $backend_pid $frontend_pid 
+# Keep script running and monitor processes
+while true; do
+    if ! kill -0 $BACKEND_PID 2>/dev/null; then
+        echo "⚠️ Backend crashed, restarting..."
+        start_backend
+    fi
+    if ! kill -0 $FRONTEND_PID 2>/dev/null; then
+        echo "⚠️ Frontend crashed, restarting..."
+        start_frontend
+    fi
+    sleep 5
+done 
