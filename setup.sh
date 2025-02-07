@@ -9,8 +9,15 @@ mkdir -p uploads
 mkdir -p cache
 mkdir -p models
 
-# Install Python dependencies
+# Install Python dependencies in the correct order
 echo "📦 Installing Python dependencies..."
+echo "Installing core dependencies first..."
+pip install --no-cache-dir numpy wheel setuptools
+
+echo "Installing dlib..."
+pip install --no-cache-dir dlib --verbose
+
+echo "Installing remaining dependencies..."
 pip install --no-cache-dir -r requirements.txt
 
 # Download required model files
