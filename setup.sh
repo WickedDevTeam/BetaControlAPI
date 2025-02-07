@@ -9,19 +9,21 @@ mkdir -p uploads
 mkdir -p cache
 mkdir -p models
 
-# Install Python dependencies in the correct order
-echo "📦 Installing Python dependencies..."
-echo "Installing core dependencies first..."
+# Basic pip setup
+echo "📦 Setting up pip..."
 python3 -m pip install --upgrade pip
-pip install --no-cache-dir wheel setuptools numpy
 
-echo "Installing remaining dependencies..."
-pip install --no-cache-dir -r requirements.txt || {
-    echo "⚠️ Full requirements installation failed, trying individual packages..."
-    pip install flask flask-cors pillow opencv-python requests psutil
-    pip install dlib --no-deps
-    pip install nudenet --no-deps
-}
+# Install basic requirements first
+echo "📦 Installing basic requirements..."
+pip install wheel setuptools numpy
+
+# Install dlib separately
+echo "📦 Installing dlib..."
+pip install dlib
+
+# Install other dependencies
+echo "📦 Installing other dependencies..."
+pip install flask flask-cors pillow opencv-python requests psutil nudenet
 
 # Download required model files
 echo "🔄 Downloading required model files..."

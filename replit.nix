@@ -5,6 +5,8 @@
     pkgs.nodejs-16_x
     pkgs.cmake
     pkgs.gcc
+    pkgs.pkg-config
+    pkgs.bzip2
 
     # Python packages
     pkgs.python39Packages.pip
