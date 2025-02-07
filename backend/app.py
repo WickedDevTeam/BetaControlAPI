@@ -18,6 +18,9 @@ from setup import setup_all
 from nudenet import NudeDetector
 import random
 from flask_restx import Api, Resource, fields, reqparse
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from backend.install_models import setup_nudenet
 
 # Run setup on import
 try:
@@ -150,7 +153,6 @@ face_predictor = dlib.shape_predictor(predictor_path)
 
 # Check for OpenPose installation
 try:
-    import sys
     sys.path.append('/usr/local/python')
     from openpose import pyopenpose as op
     # Initialize OpenPose
@@ -206,7 +208,10 @@ except Exception as e:
     print("Falling back to MediaPipe for pose detection.")
     opWrapper = None
 
-# Initialize NudeNet detector (v3 no longer accepts a model_version parameter)
+# Before initializing NudeDetector, ensure models are set up
+setup_nudenet()
+
+# Then initialize NudeDetector
 nude_detector = NudeDetector()
 
 def compute_convex_bounding_box(points, image_width, image_height, expansion_factor=0.1):

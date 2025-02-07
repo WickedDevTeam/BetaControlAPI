@@ -33,15 +33,10 @@ mkdir -p uploads
 mkdir -p cache
 mkdir -p models
 mkdir -p frontend/dist
-mkdir -p ~/.local/lib/python3.10/site-packages
 
-# Install NudeNet in user's home directory
-log_info "Installing NudeNet..."
-python -m pip install --user --no-deps nudenet
-
-# Install Python dependencies
-echo "📦 Installing Python dependencies..."
-pip install --no-cache-dir -r requirements.txt
+# Download and setup models
+log_info "Setting up models..."
+python backend/install_models.py
 
 # Download required model files if not exists
 if [ ! -f "shape_predictor_68_face_landmarks.dat" ]; then
@@ -50,7 +45,7 @@ if [ ! -f "shape_predictor_68_face_landmarks.dat" ]; then
     bzip2 -d shape_predictor_68_face_landmarks.dat.bz2
 fi
 
-# Install Node.js dependencies and build frontend
+# Set up frontend
 log_info "Setting up frontend..."
 cd frontend
 
@@ -65,7 +60,7 @@ log_info "Building frontend for production..."
 npm run build
 cd ..
 
-# Set up environment variables if not exists
+# Create default .env if it doesn't exist
 if [ ! -f ".env" ]; then
     log_info "Creating default .env file..."
     cat > .env << EOL
@@ -82,7 +77,7 @@ ENABLE_CACHING=True
 CACHE_TIMEOUT=3600
 COMPRESSION_QUALITY=85
 MAX_IMAGE_DIMENSION=4096
-PYTHONPATH=$PYTHONPATH:$HOME/.local/lib/python3.10/site-packages
+NUDENET_MODELS_PATH=/home/runner/workspace/models/nudenet
 EOL
 fi
 

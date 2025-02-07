@@ -25,12 +25,17 @@
     pkgs.python3Packages.scikit-image
     pkgs.python3Packages.matplotlib
     pkgs.python3Packages.pandas
+    pkgs.python3Packages.torch
+    pkgs.python3Packages.torchvision
 
     # Utilities
     pkgs.python3Packages.psutil
     pkgs.python3Packages.tqdm
     pkgs.python3Packages.colorlog
     pkgs.python3Packages.pyyaml
+    pkgs.python3Packages.six
+    pkgs.python3Packages.progressbar
+    pkgs.python3Packages.urllib3
 
     # Node.js and frontend tools
     pkgs.nodejs_20
@@ -46,6 +51,7 @@
     pkgs.git
     pkgs.bzip2
     pkgs.curl
+    pkgs.wget
   ];
 
   env = {
@@ -54,5 +60,6 @@
     LD_LIBRARY_PATH = "${pkgs.opencv4}/lib:${pkgs.dlib}/lib:$LD_LIBRARY_PATH";
     PYTHONPATH = "${pkgs.python3Packages.opencv4}/${pkgs.python3.sitePackages}:${pkgs.python3Packages.dlib}/${pkgs.python3.sitePackages}:$PYTHONPATH";
     OPENCV_PYTHON_SITE_PACKAGES = "${pkgs.python3Packages.opencv4}/${pkgs.python3.sitePackages}";
+    NUDENET_MODELS_PATH = "/home/runner/workspace/models/nudenet";
   };
 } 
