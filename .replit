@@ -1,5 +1,9 @@
-run = "bash setup.sh && bash start.sh"
+run = "python3 backend/app.py"
 language = "python3"
+entrypoint = "backend/app.py"
 
 [nix]
-channel = "stable-22_11" 
+channel = "stable-21_11"
+
+[env]
+PYTHONPATH = "." 
