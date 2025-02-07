@@ -12,13 +12,16 @@ mkdir -p models
 # Install Python dependencies in the correct order
 echo "📦 Installing Python dependencies..."
 echo "Installing core dependencies first..."
-pip install --no-cache-dir numpy wheel setuptools
-
-echo "Installing dlib..."
-pip install --no-cache-dir dlib --verbose
+python3 -m pip install --upgrade pip
+pip install --no-cache-dir wheel setuptools numpy
 
 echo "Installing remaining dependencies..."
-pip install --no-cache-dir -r requirements.txt
+pip install --no-cache-dir -r requirements.txt || {
+    echo "⚠️ Full requirements installation failed, trying individual packages..."
+    pip install flask flask-cors pillow opencv-python requests psutil
+    pip install dlib --no-deps
+    pip install nudenet --no-deps
+}
 
 # Download required model files
 echo "🔄 Downloading required model files..."
@@ -31,18 +34,6 @@ fi
 # Install Node.js dependencies and build frontend
 echo "🏗️ Setting up frontend..."
 cd frontend
-if ! command -v npm &> /dev/null; then
-    echo "⚠️ npm not found. Installing Node.js..."
-    if [ "$(uname)" == "Darwin" ]; then
-        # macOS
-        brew install node
-    elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
-        # Linux
-        curl -fsSL https://deb.nodesource.com/setup_16.x | sudo -E bash -
-        sudo apt-get install -y nodejs
-    fi
-fi
-
 echo "📦 Installing frontend dependencies..."
 npm install
 

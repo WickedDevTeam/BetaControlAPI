@@ -1,38 +1,19 @@
 { pkgs }: {
   deps = [
-    # Core build tools
+    # Core dependencies
+    pkgs.python39
+    pkgs.nodejs-16_x
     pkgs.cmake
     pkgs.gcc
-    pkgs.gnumake
-    pkgs.pkg-config
 
-    # Python and core packages
-    pkgs.python39
+    # Python packages
     pkgs.python39Packages.pip
     pkgs.python39Packages.setuptools
     pkgs.python39Packages.wheel
-
-    # Required system libraries
-    pkgs.zlib
-    pkgs.bzip2
-    pkgs.openssl
-    pkgs.libxml2
-    pkgs.libxslt
-    pkgs.libjpeg
-    pkgs.openblas
-    pkgs.boost
-
-    # Image processing dependencies
-    pkgs.opencv4
-    pkgs.ffmpeg
-
-    # Python packages that need compilation
     pkgs.python39Packages.numpy
-    pkgs.python39Packages.pillow
     pkgs.python39Packages.flask
     pkgs.python39Packages.flask-cors
-    pkgs.python39Packages.psutil
-    pkgs.python39Packages.requests
+    pkgs.python39Packages.opencv4
   ];
 
   env = {
