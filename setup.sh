@@ -33,6 +33,11 @@ mkdir -p uploads
 mkdir -p cache
 mkdir -p models
 mkdir -p frontend/dist
+mkdir -p ~/.local/lib/python3.10/site-packages
+
+# Install NudeNet in user's home directory
+log_info "Installing NudeNet..."
+python -m pip install --user --no-deps nudenet
 
 # Install Python dependencies
 echo "📦 Installing Python dependencies..."
@@ -77,6 +82,7 @@ ENABLE_CACHING=True
 CACHE_TIMEOUT=3600
 COMPRESSION_QUALITY=85
 MAX_IMAGE_DIMENSION=4096
+PYTHONPATH=$PYTHONPATH:$HOME/.local/lib/python3.10/site-packages
 EOL
 fi
 
