@@ -50,5 +50,10 @@ yarn-error.log*
 # Project specific
 logs/
 *.log
-shape_predictor_68_face_landmarks.dat
-models/ 
+uploads/
+cache/
+
+# Keep model files
+!models_repo/
+!models_repo/**/*
+!shape_predictor_68_face_landmarks.dat 

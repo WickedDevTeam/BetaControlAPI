@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Set up Python environment
+export PYTHONPATH="$HOME/.local/lib/python3.10/site-packages:$PYTHONPATH"
+
 # Set up colors for better visibility
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -25,114 +28,99 @@ log_error() {
 }
 
 # Function to check if a process is running
-check_process() {
-    pgrep -f "$1" >/dev/null
-    return $?
-}
-
-# Create required directories
-mkdir -p logs
-mkdir -p uploads
-mkdir -p cache
-mkdir -p models
-
-# Install frontend dependencies if not already installed
-if [ ! -d "frontend/node_modules" ]; then
-    log_info "Installing frontend dependencies..."
-    cd frontend
-    npm install
-    cd ..
-fi
-
-# Download required model files if not exists
-if [ ! -f "shape_predictor_68_face_landmarks.dat" ]; then
-    log_info "Downloading facial landmarks predictor..."
-    curl -L "http://dlib.net/files/shape_predictor_68_face_landmarks.dat.bz2" -o shape_predictor_68_face_landmarks.dat.bz2
-    bzip2 -d shape_predictor_68_face_landmarks.dat.bz2
-fi
-
-# Function to start the backend
-start_backend() {
-    log_info "Starting backend server..."
-    if [ "$PRODUCTION" = "true" ]; then
-        # Production mode with gunicorn
-        python -m gunicorn --bind 0.0.0.0:${PORT:-3000} \
-                 --workers 1 \
-                 --threads 2 \
-                 --timeout 120 \
-                 --access-logfile logs/access.log \
-                 --error-logfile logs/error.log \
-                 --capture-output \
-                 --enable-stdio-inheritance \
-                 "backend.app:app" &
+is_running() {
+    local pid=$1
+    if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+        return 0
     else
-        # Development mode
-        python backend/app.py &
+        return 1
     fi
-    BACKEND_PID=$!
-    log_success "Backend started with PID: $BACKEND_PID"
 }
-
-# Function to start the frontend
-start_frontend() {
-    log_info "Starting frontend server..."
-    cd frontend
-    if [ "$PRODUCTION" = "true" ]; then
-        # Production mode with serve
-        npx serve -s dist -l ${FRONTEND_PORT:-5173} &
-    else
-        # Development mode
-        npm run dev &
-    fi
-    FRONTEND_PID=$!
-    cd ..
-    log_success "Frontend started with PID: $FRONTEND_PID"
-}
-
-# Load environment variables
-if [ -f .env ]; then
-    export $(cat .env | grep -v '^#' | xargs)
-fi
-
-# Check if services are already running
-if check_process "backend/app.py" || check_process "gunicorn"; then
-    log_warning "Backend is already running"
-else
-    start_backend
-fi
-
-if check_process "npm run dev" || check_process "serve -s dist"; then
-    log_warning "Frontend is already running"
-else
-    start_frontend
-fi
 
 # Function to cleanup processes on exit
 cleanup() {
     log_info "Stopping services..."
-    kill $BACKEND_PID 2>/dev/null
-    kill $FRONTEND_PID 2>/dev/null
+    if [ -n "$BACKEND_PID" ] && is_running "$BACKEND_PID"; then
+        kill "$BACKEND_PID" 2>/dev/null
+        log_success "Backend stopped"
+    fi
+    if [ -n "$FRONTEND_PID" ] && is_running "$FRONTEND_PID"; then
+        kill "$FRONTEND_PID" 2>/dev/null
+        log_success "Frontend stopped"
+    fi
     exit 0
 }
 
-# Register cleanup function
+# Set up cleanup trap
 trap cleanup SIGINT SIGTERM
 
+# Start backend server
+log_info "Starting backend server..."
+python backend/app.py &
+BACKEND_PID=$!
+
+if is_running $BACKEND_PID; then
+    log_success "Backend started with PID: $BACKEND_PID"
+else
+    log_error "Failed to start backend server"
+    exit 1
+fi
+
+# Check if frontend is already running
+if lsof -i :5173 >/dev/null 2>&1; then
+    log_warning "Frontend is already running"
+else
+    # Start frontend server
+    log_info "Starting frontend server..."
+    cd frontend && npm run dev &
+    FRONTEND_PID=$!
+    cd ..
+
+    if is_running $FRONTEND_PID; then
+        log_success "Frontend started with PID: $FRONTEND_PID"
+    else
+        log_error "Failed to start frontend server"
+        cleanup
+        exit 1
+    fi
+fi
+
 log_success "Services started successfully!"
-log_info "Backend running on http://localhost:${PORT:-3000}"
-log_info "Frontend running on http://localhost:${FRONTEND_PORT:-5173}"
-log_info "API documentation available at http://localhost:${PORT:-3000}/docs"
+log_info "Backend running on http://localhost:3000"
+log_info "Frontend running on http://localhost:5173"
+log_info "API documentation available at http://localhost:3000/docs"
 log_info "Press Ctrl+C to stop all services"
 
-# Keep script running and monitor processes
+# Monitor processes and restart if needed
 while true; do
-    if ! kill -0 $BACKEND_PID 2>/dev/null; then
+    if ! is_running $BACKEND_PID; then
         log_warning "Backend crashed, restarting..."
-        start_backend
+        log_info "Starting backend server..."
+        python backend/app.py &
+        BACKEND_PID=$!
+        if is_running $BACKEND_PID; then
+            log_success "Backend started with PID: $BACKEND_PID"
+        else
+            log_error "Failed to restart backend server"
+            cleanup
+            exit 1
+        fi
     fi
-    if ! kill -0 $FRONTEND_PID 2>/dev/null; then
+
+    if ! lsof -i :5173 >/dev/null 2>&1 && ! lsof -i :5174 >/dev/null 2>&1; then
         log_warning "Frontend crashed, restarting..."
-        start_frontend
+        log_info "Starting frontend server..."
+        cd frontend && npm run dev &
+        FRONTEND_PID=$!
+        cd ..
+        if is_running $FRONTEND_PID; then
+            log_success "Frontend started with PID: $FRONTEND_PID"
+        else
+            log_error "Failed to restart frontend server"
+            cleanup
+            exit 1
+        fi
     fi
-    sleep 5
+
+    sleep 2
 done 
