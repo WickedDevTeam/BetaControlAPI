@@ -1,9 +1,14 @@
 run = "python3 backend/app.py"
 language = "python3"
 entrypoint = "backend/app.py"
+hidden = [".config", "**/__pycache__", "**/.pytest_cache"]
 
 [nix]
-channel = "stable-21_11"
+channel = "stable-23_05"
+
+[deployment]
+run = ["sh", "-c", "python3 backend/app.py"]
+deploymentTarget = "cloudrun"
 
 [env]
-PYTHONPATH = "." 
+PYTHONPATH = "${PYTHONPATH}:${REPL_HOME}" 

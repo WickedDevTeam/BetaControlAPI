@@ -9,21 +9,9 @@ mkdir -p uploads
 mkdir -p cache
 mkdir -p models
 
-# Basic pip setup
-echo "📦 Setting up pip..."
-python3 -m pip install --upgrade pip
-
-# Install basic requirements first
-echo "📦 Installing basic requirements..."
-pip install wheel setuptools numpy
-
-# Install dlib separately
-echo "📦 Installing dlib..."
-pip install dlib
-
-# Install other dependencies
-echo "📦 Installing other dependencies..."
-pip install flask flask-cors pillow opencv-python requests psutil nudenet
+# Install Python dependencies
+echo "📦 Installing Python dependencies..."
+pip install --no-cache-dir -r requirements.txt
 
 # Download required model files
 echo "🔄 Downloading required model files..."
@@ -36,6 +24,18 @@ fi
 # Install Node.js dependencies and build frontend
 echo "🏗️ Setting up frontend..."
 cd frontend
+if ! command -v npm &> /dev/null; then
+    echo "⚠️ npm not found. Installing Node.js..."
+    if [ "$(uname)" == "Darwin" ]; then
+        # macOS
+        brew install node
+    elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
+        # Linux
+        curl -fsSL https://deb.nodesource.com/setup_16.x | sudo -E bash -
+        sudo apt-get install -y nodejs
+    fi
+fi
+
 echo "📦 Installing frontend dependencies..."
 npm install
 
